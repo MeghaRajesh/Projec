@@ -122,7 +122,7 @@ class _Admin_AppointmentState extends State<Admin_Appointment> {
       TextEditingController timeController = timeControllers[index];
 
       // Get the GPay link based on your implementation
-      String gpayLink = 'upi://pay?pa=megharajesh139@oksbi&pn=MEGHA%20RAJESH&aid=uGICAgMDwidSSfA';
+      String gpayLink = '8281221409';
 
       detailsCollection.doc(documentId).update({
         'AppointmentTime': appointmentTime,

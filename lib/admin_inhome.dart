@@ -46,10 +46,13 @@ class _Admin_InhomeState extends State<Admin_Inhome> {
               var doc = snapshot.data!.docs[index];
 
               String Address = doc['Address'] ?? '';
-              int Age = doc['Age'];
+              String Age = doc['Age'] ?? '';
+              int parsedAge = int.tryParse(Age) ?? 0;
               String Gender = doc['Gender'] ?? '';
               String patientName = doc['Name'] ?? '';
-              String Place = doc['Place'] ?? '';
+              String Email = doc ['Email'] ?? '';
+              String SelectedService = doc ['Selected Service'] ?? '';
+              
 
               return ListTile(
                 title: Text(patientName),
@@ -59,7 +62,7 @@ class _Admin_InhomeState extends State<Admin_Inhome> {
                     Text('Gender: $Gender'),
                     Text('Address: $Address'),
                     Text('Age: $Age'),
-                    Text('Place: $Place'),
+                    Text('Selected Service:$SelectedService'),
                     SizedBox(height: 10),
                     TextField(
                       controller: dateController,
@@ -84,9 +87,12 @@ class _Admin_InhomeState extends State<Admin_Inhome> {
                               String appointmentTime = timeController.text;
                               saveAppointmentDateTime(
                                   doc.id,
+                                  patientName,
                                   appointmentDate,
                                   appointmentTime,
-                                  patientName);
+                                  Email,
+                                  SelectedService,
+                                  );
                             },
                       child: Text(
                         isSaving ? 'Saving...' : (isSaved ? 'Saved' : 'Save'),
@@ -102,8 +108,8 @@ class _Admin_InhomeState extends State<Admin_Inhome> {
     );
   }
 
-  void saveAppointmentDateTime(String documentId, String appointmentDate,
-      String appointmentTime, String patientName) {
+  void saveAppointmentDateTime(String documentId, String patientName,String appointmentDate,
+      String appointmentTime,String Email,String SelectedService ) {
     setState(() {
       isSaving = true; // Set saving state to true
     });
@@ -117,9 +123,11 @@ class _Admin_InhomeState extends State<Admin_Inhome> {
 
       // Create a new document in the appointments collection
       appointmentsCollection.add({
-        'PatientName': patientName,
+        
         'AppointmentDate': appointmentDate,
         'AppointmentTime': appointmentTime,
+        'Email':Email,
+        'Selected Service':SelectedService,
       }).then((_) {
         setState(() {
           isSaving = false; // Set saving state back to false
@@ -146,4 +154,4 @@ class _Admin_InhomeState extends State<Admin_Inhome> {
       });
     });
   }
-}
+}  
