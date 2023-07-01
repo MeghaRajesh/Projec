@@ -24,6 +24,22 @@ class _Admin_InhomeState extends State<Admin_Inhome> {
     return Scaffold(
       appBar: AppBar(
         title: Text('InHome Appointments'),
+        actions: [
+          Container(
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => BookedAppointmentsPage()),
+                );
+              },
+              child: CircleAvatar(
+                child: Icon(Icons.menu),
+              ),
+            ),
+          ),
+        ],
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: detailsCollection.snapshots(),
@@ -123,7 +139,7 @@ class _Admin_InhomeState extends State<Admin_Inhome> {
 
       // Create a new document in the appointments collection
       appointmentsCollection.add({
-        
+        'Patient Name':patientName,
         'AppointmentDate': appointmentDate,
         'AppointmentTime': appointmentTime,
         'Email':Email,
@@ -155,3 +171,61 @@ class _Admin_InhomeState extends State<Admin_Inhome> {
     });
   }
 }  
+
+class BookedAppointmentsPage extends StatelessWidget {
+  final CollectionReference appointmentsCollection =
+      FirebaseFirestore.instance.collection('Appointments');
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('List of Appointments'),
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: appointmentsCollection.snapshots(),
+        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (snapshot.hasError) {
+            return Text('Error: ${snapshot.error}');
+          }
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Text('No booked appointments found.');
+          }
+
+          return ListView.builder(
+            itemCount: snapshot.data!.docs.length,
+            itemBuilder: (context, index) {
+              var doc = snapshot.data!.docs[index];
+
+              String patientName = doc['Patient Name'] ?? '';
+              String appointmentTime = doc['AppointmentTime'] ?? '';
+              String appointmentDate= doc['AppointmentDate'] ?? '';
+              String SelectedService = doc ['Selected Service'] ?? '';
+
+              return ListTile(
+                title: Text(patientName),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Patient Name:$patientName'),
+                    Text('Selected Service:$SelectedService'),
+                    Text('Appoinment Date:$appointmentDate'),
+                    Text('Appointment Time: $appointmentTime'),
+                   
+                    
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+

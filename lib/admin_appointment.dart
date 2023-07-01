@@ -1,5 +1,7 @@
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 class Admin_Appointment extends StatefulWidget {
   @override
@@ -10,10 +12,11 @@ class _Admin_AppointmentState extends State<Admin_Appointment> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   CollectionReference detailsCollection =
       FirebaseFirestore.instance.collection('combinedDetails');
-  CollectionReference appointmentsCollection =
-      FirebaseFirestore.instance.collection('BookedAppointments'); // New collection
+  CollectionReference appointmentsCollection = FirebaseFirestore.instance
+      .collection('BookedAppointments'); // New collection
 
-  List<TextEditingController> timeControllers = []; // List of controllers for each detail item
+  List<TextEditingController> timeControllers =
+      []; // List of controllers for each detail item
   bool isSaving = false; // Added variable to track saving state
   bool isSaved = false; // Added variable to track saved state
 
@@ -31,6 +34,22 @@ class _Admin_AppointmentState extends State<Admin_Appointment> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Appointments'),
+        actions: [
+          Container(
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => BookedAppointmentsPage()),
+                );
+              },
+              child: CircleAvatar(
+                child: Icon(Icons.menu),
+              ),
+            ),
+          ),
+        ],
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: detailsCollection.snapshots(),
@@ -58,7 +77,7 @@ class _Admin_AppointmentState extends State<Admin_Appointment> {
               String Gender = doc['Gender'] ?? '';
               String patientName = doc['Name'] ?? '';
               String Email = doc['Email'] ?? '';
-              String Doctorname =doc['Doctor name'];
+              String Doctorname = doc['Doctor name'];
 
               // Create a separate TextEditingController for each detail item
               TextEditingController timeController = TextEditingController();
@@ -74,7 +93,6 @@ class _Admin_AppointmentState extends State<Admin_Appointment> {
                     Text('Age: $age'),
                     Text('Doctor Name:$Doctorname'),
                     SizedBox(height: 10),
-
                     TextField(
                       controller: timeController,
                       decoration: InputDecoration(
@@ -110,13 +128,15 @@ class _Admin_AppointmentState extends State<Admin_Appointment> {
     );
   }
 
-  void saveAppointmentDateTime(String documentId, String appointmentTime, String patientName, String Email,String Doctorname) {
+  void saveAppointmentDateTime(String documentId, String appointmentTime,
+      String patientName, String Email, String Doctorname) {
     setState(() {
       isSaving = true; // Set saving state to true
     });
 
     // Find the corresponding TextEditingController for the detail item
-    int index = timeControllers.indexWhere((controller) => controller.text == appointmentTime);
+    int index = timeControllers
+        .indexWhere((controller) => controller.text == appointmentTime);
 
     if (index >= 0) {
       TextEditingController timeController = timeControllers[index];
@@ -126,10 +146,9 @@ class _Admin_AppointmentState extends State<Admin_Appointment> {
 
       detailsCollection.doc(documentId).update({
         'AppointmentTime': appointmentTime,
-       
         'GPayLink': gpayLink,
         'Email': Email,
-         'Doctor Name':Doctorname,
+        'Doctor Name': Doctorname,
       }).then((value) {
         // Time and GPay link saved successfully
         print('Time and GPay link saved successfully!');
@@ -139,8 +158,8 @@ class _Admin_AppointmentState extends State<Admin_Appointment> {
           'PatientName': patientName,
           'AppointmentTime': appointmentTime,
           'GPayLink': gpayLink,
-          'Email': Email, 
-          'Doctor Name':Doctorname,
+          'Email': Email,
+          'Doctor Name': Doctorname,
         }).then((_) {
           setState(() {
             isSaving = false; // Set saving state back to false
@@ -170,3 +189,57 @@ class _Admin_AppointmentState extends State<Admin_Appointment> {
     }
   }
 }
+class BookedAppointmentsPage extends StatelessWidget {
+  final CollectionReference appointmentsCollection =
+      FirebaseFirestore.instance.collection('BookedAppointments');
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('List of Appointments'),
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: appointmentsCollection.snapshots(),
+        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (snapshot.hasError) {
+            return Text('Error: ${snapshot.error}');
+          }
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Text('No booked appointments found.');
+          }
+
+          return ListView.builder(
+            itemCount: snapshot.data!.docs.length,
+            itemBuilder: (context, index) {
+              var doc = snapshot.data!.docs[index];
+
+              String patientName = doc['PatientName'] ?? '';
+              String appointmentTime = doc['AppointmentTime'] ?? '';
+              
+              String doctorName = doc['Doctor Name'] ?? '';
+
+              return ListTile(
+                title: Text(patientName),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Appointment Time: $appointmentTime'),
+                   
+                    Text('Doctor Name: $doctorName'),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
