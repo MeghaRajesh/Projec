@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import 'package:mailer/mailer.dart';
+import 'package:mailer/smtp_server.dart';
 
 class Medicine {
   final String name;
@@ -36,11 +39,41 @@ class _MedicineInventoryScreenState extends State<MedicineInventoryScreen> {
   final TextEditingController medicineQuantityController =
       TextEditingController();
 
+  List<Medicine> medicines = []; // List of medicines
+
+  @override
+  void initState() {
+    super.initState();
+    // Load medicines data from Firestore when the widget is initialized
+    _loadMedicines();
+  }
+
+  void _loadMedicines() async {
+    final QuerySnapshot snapshot = await medicinesRef.get();
+    setState(() {
+      medicines = snapshot.docs.map((doc) {
+        return Medicine(
+          name: doc['name'],
+          quantity: doc['quantity'],
+        );
+      }).toList();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Medicines Available'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.share),
+            onPressed: () {
+              // Share the medicine details through Gmail app
+              _launchGmailApp();
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -67,54 +100,38 @@ class _MedicineInventoryScreenState extends State<MedicineInventoryScreen> {
               child: Text('Add Medicine'),
             ),
             SizedBox(height: 10.0),
-            StreamBuilder<QuerySnapshot>(
-              stream: medicinesRef.snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return CircularProgressIndicator();
-                }
-                List<Medicine> medicines = [];
-                snapshot.data!.docs.forEach((doc) {
-                  medicines.add(Medicine(
-                    name: doc['name'],
-                    quantity: doc['quantity'],
-                  ));
-                });
-                return Expanded(
-                  child: ListView.builder(
-                    itemCount: medicines.length,
-                    itemBuilder: (context, index) {
-                      return Card(
-                        child: ListTile(
-                          title: Text(medicines[index].name),
-                          subtitle:
-                              Text('Quantity: ${medicines[index].quantity}'),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: Icon(Icons.remove),
-                                onPressed: () =>
-                                    updateMedicineQuantity(medicines[index], -1),
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.add),
-                                onPressed: () =>
-                                    updateMedicineQuantity(medicines[index], 1),
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.delete),
-                                onPressed: () =>
-                                    deleteMedicine(medicines[index]),
-                              ),
-                            ],
+            Expanded(
+              child: ListView.builder(
+                itemCount: medicines.length,
+                itemBuilder: (context, index) {
+                  return Card(
+                    child: ListTile(
+                      title: Text(medicines[index].name),
+                      subtitle:
+                          Text('Quantity: ${medicines[index].quantity}'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.remove),
+                            onPressed: () =>
+                                updateMedicineQuantity(medicines[index], -1),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                );
-              },
+                          IconButton(
+                            icon: Icon(Icons.add),
+                            onPressed: () =>
+                                updateMedicineQuantity(medicines[index], 1),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete),
+                            onPressed: () => deleteMedicine(medicines[index]),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -165,4 +182,48 @@ class _MedicineInventoryScreenState extends State<MedicineInventoryScreen> {
       });
     }
   }
+void _launchGmailApp() async {
+    String subject = 'Medicine Inventory Details';
+    String body = _buildEmailBody();
+
+    final smtpServer = gmail('saranya29testing@gmail.com', 'esbhgqbcemhviazk'); // Replace with your Gmail email and application-specific password
+
+    final message = Message()
+      ..from = Address('saranya29testing@gmail.com') // Replace with your Gmail email
+      ..recipients.add('megharajesh139@gmail.com') // Replace with the recipient's email address
+      ..subject = subject
+      ..text = body;
+
+    try {
+      final sendReport = await send(message, smtpServer);
+      print('Message sent: ${sendReport.toString()}');
+
+      _showSnackBar('Mail sent successfully!');
+    } on MailerException catch (e) {
+      print('Error sending email: $e');
+      _showSnackBar('Error sending email. Please try again.');
+    }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+
+  String _buildEmailBody() {
+    String emailBody = 'Medicine Inventory Details:\n\n';
+    // Loop through the list of medicines and add them to the email body
+    for (Medicine medicine in medicines) {
+      emailBody += 'Medicine Name: ${medicine.name}\n';
+      emailBody += 'Quantity: ${medicine.quantity}\n\n';
+    }
+    return emailBody;
+  }
 }
+
+

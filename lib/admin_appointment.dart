@@ -1,6 +1,8 @@
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:mailer/mailer.dart';
+import 'package:mailer/smtp_server.dart';
 
 
 class Admin_Appointment extends StatefulWidget {
@@ -72,8 +74,9 @@ class _Admin_AppointmentState extends State<Admin_Appointment> {
               var doc = snapshot.data!.docs[index];
 
               String Address = doc['Address'] ?? '';
-              String age = doc['Age'] ?? '';
-              int parsedAge = int.tryParse(age) ?? 0;
+              int age = doc['Age'] ?? '';
+   
+              
               String Gender = doc['Gender'] ?? '';
               String patientName = doc['Name'] ?? '';
               String Email = doc['Email'] ?? '';
@@ -149,6 +152,7 @@ class _Admin_AppointmentState extends State<Admin_Appointment> {
         'GPayLink': gpayLink,
         'Email': Email,
         'Doctor Name': Doctorname,
+        
       }).then((value) {
         // Time and GPay link saved successfully
         print('Time and GPay link saved successfully!');
@@ -189,6 +193,7 @@ class _Admin_AppointmentState extends State<Admin_Appointment> {
     }
   }
 }
+
 class BookedAppointmentsPage extends StatelessWidget {
   final CollectionReference appointmentsCollection =
       FirebaseFirestore.instance.collection('BookedAppointments');
@@ -198,6 +203,15 @@ class BookedAppointmentsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('List of Appointments'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.share),
+            onPressed: () {
+              // Share the appointment details through Gmail app
+              _shareAppointmentsDetails(context);
+            },
+          ),
+        ],
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: appointmentsCollection.snapshots(),
@@ -221,7 +235,6 @@ class BookedAppointmentsPage extends StatelessWidget {
 
               String patientName = doc['PatientName'] ?? '';
               String appointmentTime = doc['AppointmentTime'] ?? '';
-              
               String doctorName = doc['Doctor Name'] ?? '';
 
               return ListTile(
@@ -230,7 +243,6 @@ class BookedAppointmentsPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Appointment Time: $appointmentTime'),
-                   
                     Text('Doctor Name: $doctorName'),
                   ],
                 ),
@@ -241,5 +253,56 @@ class BookedAppointmentsPage extends StatelessWidget {
       ),
     );
   }
-}
 
+  void _shareAppointmentsDetails(BuildContext context) async {
+    String subject = 'Appointments Details';
+    String body = await _getAppointmentsDetails();
+    String recipientEmail = 'megharajesh139@gmail.com'; // Replace with the recipient's email address
+
+    final smtpServer = gmail('saranya29testing@gmail.com', 'esbhgqbcemhviazk'); // Replace with your Gmail email and password
+
+    final message = Message()
+      ..from = Address('saranya29testing@gmail.com') // Replace with your Gmail email
+      ..recipients.add(recipientEmail)
+      ..subject = subject
+      ..text = body;
+
+    try {
+      final sendReport = await send(message, smtpServer);
+      print('Message sent: ${sendReport.toString()}');
+
+      _showSnackBar(context, 'Mail sent successfully!');
+    } on MailerException catch (e) {
+      print('Error sending email: $e');
+      _showSnackBar(context, 'Error sending email. Please try again.');
+    }
+  }
+
+  void _showSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+
+
+
+  Future<String> _getAppointmentsDetails() async {
+    // Query the Firestore collection and get the appointment details
+    QuerySnapshot snapshot = await appointmentsCollection.get();
+    String details = 'Appointments Details:\n\n';
+    for (var doc in snapshot.docs) {
+      String patientName = doc['PatientName'] ?? '';
+      String appointmentTime = doc['AppointmentTime'] ?? '';
+      String doctorName = doc['Doctor Name'] ?? '';
+
+      details += 'Patient Name: $patientName\n';
+      details += 'Appointment Time: $appointmentTime\n';
+      details += 'Doctor Name: $doctorName\n\n';
+    }
+    return details;
+  }
+}

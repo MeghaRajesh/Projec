@@ -31,7 +31,7 @@ class _loginState extends State<login> {
           "Images/newwelcome.jpeg", // Replace with your image path
           fit: BoxFit.cover,
           width: 400,
-          height: 780,
+          height: 850,
         ),
         Positioned(
           bottom: 30, // Adjust the position as per your requirement

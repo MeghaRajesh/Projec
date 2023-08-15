@@ -62,8 +62,7 @@ class _Admin_InhomeState extends State<Admin_Inhome> {
               var doc = snapshot.data!.docs[index];
 
               String Address = doc['Address'] ?? '';
-              String Age = doc['Age'] ?? '';
-              int parsedAge = int.tryParse(Age) ?? 0;
+              int Age = doc['Age'] ?? '';
               String Gender = doc['Gender'] ?? '';
               String patientName = doc['Name'] ?? '';
               String Email = doc ['Email'] ?? '';

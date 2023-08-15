@@ -50,6 +50,10 @@ dependencies:
   dio: ^5.2.1
   cupertino_icons: ^1.0.2
   firebase_messaging: ^14.6.3
+  flutter_email_sender: ^6.0.1
+  url_launcher: ^6.0.0
+  mailer: ^5.0.2
+  
 
 dev_dependencies:
   flutter_test:

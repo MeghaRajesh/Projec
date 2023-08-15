@@ -6,9 +6,6 @@ import 'package:flutter/material.dart';
 import 'admin_editaccnt.dart';
 import 'admin_help.dart';
 import 'admin_inhome.dart';
-import 'package:flutter/material.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-
 
 class Admin_Home extends StatefulWidget {
   const Admin_Home({super.key});
@@ -117,7 +114,7 @@ class _Admin_HomeState extends State<Admin_Home> {
           Image.asset(
             "Images/homedoc1.png", // Replace with your image path
             fit: BoxFit.cover,
-            width: 400,
+            width: 500,
             height: 400,
           ),
           Text("\n"),
